@@ -1,12 +1,11 @@
 import { GetStaticProps } from 'next';
-import { Head } from 'next/document';
 import Prismic from '@prismicio/client';
 
 import { RichText } from 'prismic-dom';
 import { getPrismicClient } from '../services/prismic';
 
-import commonStyles from '../styles/common.module.scss';
-import styles from './home.module.scss';
+// import commonStyles from '../styles/common.module.scss';
+// import styles from './home.module.scss';
 
 interface Post {
   uid?: string;
@@ -30,12 +29,11 @@ interface HomeProps {
 export default function Home({ postsPagination }: HomeProps) {
   return (
     <>
-      <Head>
+      <head>
         <title>Home | espacetraveling</title>
-      </Head>
-      <main className={styles.contentContainer}>
-        <section className={styles.hero}>
-          <h1> {postsPagination.results} </h1>
+      </head>
+      <main>
+        <section>
           <time>15/04/2020</time>
           <span>Rosana Moreira</span>
           <span>4 minu</span>
@@ -62,15 +60,13 @@ export default function Home({ postsPagination }: HomeProps) {
     </>
   );
 }
-
 export const getStaticProps: GetStaticProps = async () => {
   const prismic = getPrismicClient();
-
   const response = await prismic.query(
     [Prismic.predicates.at('document.type', 'publication')],
     {
-      fetch: ['publication.title', 'publication.content'],
-      pageSize: 20,
+      fetch: ['publication.title'],
+      pageSize: 100,
     }
   );
   const posts = response.results.map(post => {
