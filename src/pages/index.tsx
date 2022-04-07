@@ -1,11 +1,19 @@
 import { GetStaticProps } from 'next';
+import Link from 'next/link';
+import Head from 'next/head';
+
+import { FiCalendar, FiUser } from 'react-icons/fi';
+
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
+
 import Prismic from '@prismicio/client';
 
-import { RichText } from 'prismic-dom';
+import { useState } from 'react';
 import { getPrismicClient } from '../services/prismic';
 
-// import commonStyles from '../styles/common.module.scss';
-// import styles from './home.module.scss';
+import commonStyles from '../styles/common.module.scss';
+import styles from './home.module.scss';
 
 interface Post {
   uid?: string;
@@ -24,60 +32,150 @@ interface PostPagination {
 
 interface HomeProps {
   postsPagination: PostPagination;
+  preview: boolean;
 }
 
-export default function Home({ postsPagination }: HomeProps) {
+function FormatPosts(posts: PostPagination): Post[] {
+  const newPostsFormatted = posts.results.map(post => {
+    return {
+      uid: post.uid,
+      first_publication_date: format(
+        new Date(post.first_publication_date),
+        "dd MMM' 'yyyy",
+        {
+          locale: ptBR,
+        }
+      ),
+      // 27 mar 2021
+      data: {
+        title: post.data.title as string,
+        subtitle: post.data.subtitle as string,
+        author: post.data.author as string,
+      },
+    };
+  });
+
+  return newPostsFormatted;
+}
+
+export default function Home({
+  postsPagination,
+  preview,
+}: HomeProps): JSX.Element {
+  const { results, next_page } = postsPagination;
+
+  const resultsWithDateFormated = results.map(result => ({
+    ...result,
+    first_publication_date: format(
+      new Date(result.first_publication_date),
+      "dd MMM' 'yyyy",
+      {
+        locale: ptBR,
+      }
+    ),
+  }));
+
+  const [posts, setPosts] = useState<Post[]>(resultsWithDateFormated);
+  const [nextPage, setNextPage] = useState(next_page);
+
+  async function getMorePosts(): Promise<void> {
+    if (!next_page) {
+      return;
+    }
+
+    const nextPosts = await fetch(next_page);
+
+    const nextPostsJSON = await nextPosts.json();
+
+    const newPostsFormatted = FormatPosts(nextPostsJSON);
+
+    setPosts([...posts, ...newPostsFormatted]);
+
+    setNextPage(nextPostsJSON.nextPage);
+  }
+
   return (
     <>
-      <head>
-        <title>Home | espacetraveling</title>
-      </head>
-      <main>
-        <section>
-          <time>15/04/2020</time>
-          <span>Rosana Moreira</span>
-          <span>4 minu</span>
-          <h2>PuseState</h2>
-          <p>
-            O hook mais comum utilizado para controlarmos alguma variável de
-            estado dentro de um functional component no React. Para utilizar
-            definimos: cont [count, setCount] = useState(0); O primeiro valor
-            count representa o valor do estado que será manipulado pela função
-            setCount recebida através da desestruturação realizada no useState.
-            O valor 0 repassado ao hook é o valor inicial do estado.
-          </p>
-          <h2>useEffect</h2>
-          <p>
-            O hook mais comum utilizado para controlarmos alguma variável de
-            estado dentro de um functional component no React. Para utilizar
-            definimos: cont [count, setCount] = useState(0); O primeiro valor
-            count representa o valor do estado que será manipulado pela função
-            setCount recebida através da desestruturação realizada no useState.
-            O valor 0 repassado ao hook é o valor inicial do estado.
-          </p>
-        </section>
-      </main>
+      <Head>
+        <title>Space Traveling</title>
+      </Head>
+      <div className={commonStyles.container}>
+        <div className={commonStyles.logo}>
+          <img src="/images/logo.svg" alt="logo" />
+        </div>
+        <main className={styles.postContainer}>
+          {posts.map(post => (
+            <Link href={`/post/${post.uid}`} key={post.uid}>
+              <div className={styles.post}>
+                <h2>{post.data.title}</h2>
+                <span>{post.data.subtitle}</span>
+                <div className={commonStyles.info}>
+                  <p>
+                    <FiCalendar /> {post.first_publication_date}
+                  </p>
+                  <p>
+                    <FiUser /> {post.data.author}
+                  </p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </main>
+        {nextPage && (
+          <div className={styles.morePosts}>
+            <button type="button" onClick={getMorePosts}>
+              Carregar mais posts
+            </button>
+          </div>
+        )}
+        {preview && (
+          <aside className={commonStyles.previewPrismic}>
+            <Link href="/api/exit-preview">
+              <a>Sair do modo Preview</a>
+            </Link>
+          </aside>
+        )}
+      </div>
     </>
   );
 }
-export const getStaticProps: GetStaticProps = async () => {
+
+export const getStaticProps: GetStaticProps<HomeProps> = async ({
+  preview = false,
+  previewData,
+}) => {
   const prismic = getPrismicClient();
-  const response = await prismic.query(
-    [Prismic.predicates.at('document.type', 'publication')],
+
+  const postsResponse = await prismic.query(
+    [Prismic.Predicates.at('document.type', 'post')],
     {
-      fetch: ['publication.title'],
-      pageSize: 100,
+      pageSize: 2,
+      ref: previewData?.ref ?? null,
     }
   );
-  const posts = response.results.map(post => {
+
+  const posts = postsResponse.results.map(post => {
     return {
-      slug: post.uid,
-      title: RichText.asText(post.data.title),
+      uid: post.uid,
+      first_publication_date: post.first_publication_date,
+      data: {
+        title: post.data.title as string,
+        subtitle: post.data.subtitle as string,
+        author: post.data.author as string,
+      },
     };
   });
+
+  const finalProps = {
+    next_page: postsResponse.next_page,
+    results: posts,
+  };
+
   return {
     props: {
-      posts,
+      postsPagination: finalProps,
+      preview,
     },
+    revalidate: 1800, // 30 minutos
   };
 };
