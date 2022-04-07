@@ -14,7 +14,7 @@ Antes de começar, você vai precisar ter instalado em sua máquina as seguintes
 [Git](https://git-scm.com) e [React](https://pt-br.reactjs.org/).
 Além disto é bom ter um editor para trabalhar com o código como [VSCode](https://code.visualstudio.com/).
 
-# 🎲 Rodando o Back-End
+# 🎲 Rodando o Front-End
 
 ```bash
 # Clone este repositório
@@ -31,17 +31,4 @@ $ yarn dev
 
 # O servidor do back-end inciará na porta:3000 - acesse <http://localhost:3000>
 
-```
-
-# 🎲 Rodando o Front-End
-
-```bash
-
-# Acesse a pasta do projeto no terminal/cmd
-$ cd GoRestaurant
-
-# Abra um novo terminal e execute a aplicação em modo de desenvolvimento
-$ yarn start
-
-# O servidor do front-end inciará na porta:3000 - acesse <http://localhost:3000>
 ```
