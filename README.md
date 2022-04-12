@@ -2,7 +2,7 @@
 
 <h2>Descrição do Projeto</h2>
 <p align="center">
-Aplicação desenvolvida no segundo desafio Ignite React da Rocketseat Capítulo III - Desafio 01 -  Criando um projeto do zero com nextjs.
+Aplicação desenvolvida no   Capítulo III do Ignite React da Rocketseat - Desafio 01 -  Criando um projeto do zero com nextjs.
 </p>
 
 <h1 align="center">
